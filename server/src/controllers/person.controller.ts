@@ -26,6 +26,8 @@ import {
   PersonCreateDto,
   PersonResponseDto,
   PersonSearchDto,
+  PersonShareRequestDto,
+  PersonShareResponseDto,
   PersonStatisticsResponseDto,
   PersonUpdateDto,
 } from 'src/dtos/person.dto.js';
@@ -218,5 +220,27 @@ export class PersonController {
     @Body() dto: MergePersonDto,
   ): Promise<BulkIdResponseDto[]> {
     return this.service.mergePeople(auth, { ids: [id, ...dto.ids] });
+  }
+
+  @Get('shared-users')
+  @Authenticated({ permission: Permission.PersonRead })
+  @Endpoint({
+    summary: 'Get shared users',
+    description: 'Retrieve a list of shared users and people',
+    history: new HistoryBuilder().added('v3.3').stable('v3.3'),
+  })
+  getSharedPersonUsers(@Auth() auth: AuthDto): Promise<PersonShareResponseDto> {
+    return this.service.getSharedUsers(auth);
+  }
+
+  @Put('shared-users')
+  @Authenticated({ permission: Permission.PersonUpdate })
+  @Endpoint({
+    summary: 'Create shared users',
+    description: 'Share people with a user',
+    history: new HistoryBuilder().added('v3.3').stable('v3.3'),
+  })
+  sharePeopleWithUser(@Auth() auth: AuthDto, @Body() dto: PersonShareRequestDto): Promise<void> {
+    return this.service.shareWithUsers(auth, dto);
   }
 }

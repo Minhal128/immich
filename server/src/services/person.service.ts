@@ -18,11 +18,14 @@ import {
   PersonCreateDto,
   PersonResponseDto,
   PersonSearchDto,
+  PersonShareRequestDto,
+  PersonShareResponseDto,
   PersonStatisticsResponseDto,
   PersonUpdateDto,
   mapFaces,
   mapPerson,
 } from 'src/dtos/person.dto.js';
+import { mapUser } from 'src/dtos/user.dto.js';
 import {
   AssetVisibility,
   CacheControl,
@@ -750,6 +753,24 @@ export class PersonService extends BaseService {
     await this.requireAccess({ auth, permission: Permission.FaceDelete, ids: [id] });
 
     return dto.force ? this.personRepository.deleteAssetFace(id) : this.personRepository.softDeleteAssetFaces(id);
+  }
+
+  async getSharedUsers(auth: AuthDto): Promise<PersonShareResponseDto> {
+    const sharedUsers = await this.personUserRepository.getForOwner(auth.user.id);
+
+    return sharedUsers.map((sharedUser) => ({ ...sharedUser, sharedWith: mapUser(sharedUser.sharedWith) }));
+  }
+
+  async shareWithUsers(auth: AuthDto, dto: PersonShareRequestDto) {
+    await this.requireAccess({ auth, permission: Permission.PersonUpdate, ids: dto.personIds });
+    await this.personUserRepository.createAll(
+      dto.personIds.map((personGroupId) => ({
+        personGroupId,
+        sharedById: auth.user.id,
+        sharedWithId: dto.sharedWithId,
+        role: dto.role,
+      })),
+    );
   }
 
   private vacuum(...tables: (keyof DB)[]): Promise<unknown> {
